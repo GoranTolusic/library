@@ -7,6 +7,7 @@ export async function up(knex: Knex): Promise<void> {
         table.bigInteger('userId').unsigned().references('id').inTable('users').onDelete('CASCADE');
         table.bigInteger('createdAt');
         table.bigInteger('updatedAt');
+        table.unique(['userId', 'bookId']);
     });
 }
 

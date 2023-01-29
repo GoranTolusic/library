@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Request } from '@nestjs/common';
 import { UsePipes } from '@nestjs/common/decorators';
 import { ValidationPipe } from '@nestjs/common/pipes';
 import { ApiHeader, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -9,6 +9,9 @@ import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { Book } from './entities/book.entity';
 import { UserGuard } from '../../guards/user.guard';
+import { Borrowed } from './entities/borrowed.entity';
+import { BorrowDto } from './dto/borrow.dto';
+import { request } from 'http';
 
 @ApiTags('books')
 @ApiHeader({ name: 'accesstoken', description: 'token' })
@@ -54,5 +57,17 @@ export class BooksController {
   @UseGuards(OwnerShip)
   remove(@Param('id') id: number) {
     return this.booksService.remove(id);
+  }
+
+  @ApiResponse({ type: Borrowed, status: 200 })
+  @Post('borrow')
+  async borrow(@Request() request, @Body() borrow: BorrowDto) {
+    return await this.booksService.borrow(request.user, borrow);
+  }
+
+  @ApiResponse({ status: 200 })
+  @Post('unborrow')
+  async unborrow(@Request() request, @Body() borrow: BorrowDto) {
+    return await this.booksService.unborrow(request.user, borrow);
   }
 }

@@ -9,15 +9,13 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { _ } from 'lodash'
-import { RedisService } from '../../services/redis.service';
 
 @Injectable()
 export class UsersService {
   constructor(@InjectRepository(User) private repository: Repository<User>,
     private hashService: HashService,
     private dataSource: DataSource,
-    private jwtService: JWTService,
-    private redisService: RedisService
+    private jwtService: JWTService
   ) { }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -49,9 +47,6 @@ export class UsersService {
     if (!matches) throw new HttpException('Incorrect password. Try Again!', 403)
     if (!user.active) throw new HttpException('Your account has been deactivated!', 403)
 
-    //set role in redis
-    await this.redisService.setKey(`user-${user.id}`, user.role)
-
     //return accessToken 
     return { accessToken: this.jwtService.generateToken(_.omit(user, ['password'])) }
   }
@@ -74,7 +69,7 @@ export class UsersService {
   async findOne(params: object): Promise<User> {
     return await this.repository.findOne({
       where: params,
-      relations: ['books']
+      relations: ['books', 'borrowed']
     })
   }
 
@@ -107,7 +102,7 @@ export class UsersService {
     let user = await this.findOne({ id: id })
     if (!user) throw new HttpException('User not found!', 404)
 
-    //Always delete author or inactive admin. Active admins are "delete" proof
+    //Always delete author/user or inactive admin. Active admins are "delete" proof
     if (user.role === 'admin' && user.active) throw new HttpException('Unable to delete active admin users', 403)
     await this.repository.delete(id)
     return { message: "deleted" };

@@ -1,13 +1,16 @@
 import { Injectable, HttpException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { BorrowDto } from './dto/borrow.dto';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { Book } from './entities/book.entity';
+import { Borrowed } from './entities/borrowed.entity';
 
 @Injectable()
 export class BooksService {
-  constructor(@InjectRepository(Book) private repository: Repository<Book>
+  constructor(@InjectRepository(Book) private repository: Repository<Book>,
+    @InjectRepository(Borrowed) private borrowRepository: Repository<Borrowed>
   ) { }
 
   async create(createBookDto: CreateBookDto): Promise<Book> {
@@ -61,5 +64,25 @@ export class BooksService {
     if (!book) throw new HttpException('Book not found!', 404)
     await this.repository.delete(id)
     return { message: "deleted" };
+  }
+
+  async borrow(user, borrow: BorrowDto): Promise<Borrowed> {
+    let checkIfBorrowedAlready = await this.borrowRepository.findOneBy({
+      bookId: borrow.bookId
+    })
+    if (checkIfBorrowedAlready) throw new HttpException('Book is already borrowed!', 405)
+    Object.assign(borrow, { userId: user.id })
+    let created = await this.borrowRepository.create(borrow)
+    return created
+  }
+
+  async unborrow(user, borrow: BorrowDto): Promise<string> {
+    let checkIfBorrowedAlready = await this.borrowRepository.findOneBy({
+      bookId: borrow.bookId,
+      userId: user.id
+    })
+    if (!checkIfBorrowedAlready) throw new HttpException('Book is not on your borrowed list!', 404)
+    await this.borrowRepository.delete(checkIfBorrowedAlready.id)
+    return 'success'
   }
 }

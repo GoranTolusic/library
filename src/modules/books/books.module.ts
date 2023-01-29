@@ -4,15 +4,15 @@ import { BooksController } from './books.controller';
 import { AuthMiddleware } from '../../middlewares/auth.middleware';
 import { HashService } from '../../services/hash.service';
 import { JWTService } from '../../services/jwt.service';
-import { RedisService } from '../../services/redis.service';
 import { UsersModule } from '../users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Book } from './entities/book.entity';
+import { Borrowed } from './entities/borrowed.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Book]), UsersModule],
+  imports: [TypeOrmModule.forFeature([Book, Borrowed]), UsersModule],
   controllers: [BooksController],
-  providers: [BooksService, HashService, JWTService, RedisService],
+  providers: [BooksService, HashService, JWTService],
   exports: [BooksService]
 })
 export class BooksModule implements NestModule {
